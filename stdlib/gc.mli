@@ -91,15 +91,23 @@ type stat =
     (** Maximum size reached by the major heap, in words. *)
 
     stack_size: int;
-    (** Current size of the stack, in words.
-        This metric is currently not available in OCaml 5: the field value is
-        always [0].
-        @since 3.12 *)
-
+    (** Current size of the current OCaml stack, in words.
+        @since 3.12
+        @since 5.0 not implemented
+        @since 5.5 restored for the current stack
+    *)
     forced_major_collections: int;
     (** Number of forced full major collections completed since the program
         was started.
         @since 4.12 *)
+
+    live_stacks_words: int;
+    (** Total space allocated outside of the OCaml heap for stack fragments.
+        This includes stack metadata and stack fragments stored inside the stack
+        fragment cache.
+        @since 5.5
+    *)
+
 }
 (** The memory management counters are returned in a [stat] record. These
    counters give values for the whole program.

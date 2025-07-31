@@ -53,6 +53,11 @@
 static_assert(sizeof(struct stack_info) == Stack_ctx_words * sizeof(value), "");
 
 static _Atomic int64_t fiber_id = 0;
+static atomic_uintnat live_stack_counter = 0;
+
+uintnat caml_live_stacks_memory (void) {
+  return atomic_load(&live_stack_counter);
+}
 
 uintnat caml_get_init_stack_wsize (void)
 {
@@ -80,6 +85,12 @@ void caml_change_max_stack_size (uintnat new_max_wsize)
                      new_max_wsize * sizeof (value) / 1024);
   }
   caml_max_stack_wsize = new_max_wsize;
+}
+
+
+uintnat caml_current_stack_size(void) {
+  struct stack_info *current_stack = Caml_state->current_stack;
+  return (Stack_high(current_stack) - (value*)current_stack->sp);
 }
 
 #define NUM_STACK_SIZE_CLASSES 5
@@ -189,6 +200,9 @@ alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket, value hval,
     hand = (struct stack_handler*)caml_round_up(
       (uintnat)stack + sizeof(struct stack_info) + sizeof(value) * wosize, 16);
     stack->handler = hand;
+    atomic_fetch_add(&live_stack_counter,
+                     (value*)(stack->handler+1) - (value*)stack);
+
   }
 
   hand->handle_value = hval;
@@ -555,6 +569,8 @@ void caml_free_stack (struct stack_info* stack)
            (Stack_high(stack)-Stack_base(stack))*sizeof(value));
 #endif
   } else {
+    atomic_fetch_sub(&live_stack_counter,
+                     (value*)(stack->handler+1) - (value*)stack);
 #ifdef DEBUG
     memset(stack, 0x42, (char*)stack->handler - (char*)stack);
 #endif
