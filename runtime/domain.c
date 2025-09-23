@@ -1291,7 +1291,13 @@ CAMLprim value caml_domain_spawn(value callback, value term_sync)
                                     sizeof(struct domain_ml_values));
   init_domain_ml_values(p.ml_values, callback, term_sync);
 
-  err = pthread_create(&th, 0, domain_thread_func, (void*)&p);
+  /* Semgrep: ensure we have an appropriately-large stack.  Workaround 
+   * until https://github.com/ocaml/ocaml/issues/14195 is available. */
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, 64 * 1024 * 1024);
+
+  err = pthread_create(&th, &attr, domain_thread_func, (void*)&p);
 
   if (err) {
     caml_failwith("failed to create domain thread");
