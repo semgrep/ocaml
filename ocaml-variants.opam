@@ -82,7 +82,7 @@ build: [
     "--disable-native-compiler" {ocaml-option-bytecode-only:installed}
     "--disable-flat-float-array" {ocaml-option-no-flat-float-array:installed}
     "--enable-flambda" {ocaml-option-flambda:installed}
-    "--enable-frame-pointers" {ocaml-option-fp:installed}
+    "--enable-frame-pointers" {ocaml-option-fp:installed | ocaml-option-tsan:insalled}
     "--without-zstd" {ocaml-option-no-compression:installed}
     "--enable-tsan" {ocaml-option-tsan:installed}
     "--disable-cfi" {ocaml-option-tsan:installed}
