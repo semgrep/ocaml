@@ -1,3 +1,4 @@
+#docker build -t semgrep/ocaml-5.3.0-semgrep .
 FROM alpine:3.22
 
 # Ash won't source the profile by default
