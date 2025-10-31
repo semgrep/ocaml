@@ -21,8 +21,10 @@ RUN --mount=type=bind,target=/home/semgrep/repo \
     echo 'eval $(opam env --switch=5.3.0)' >> /home/semgrep/.profile && \
     eval $(opam env --switch=5.3.0) && \
     opam pin add ocaml-variants.5.3.0 "/home/semgrep/repo" --update-invariant -y && \
-    opam install lsp dune ocaml-lsp-server utop odoc ocamlformat -y && \
-    opam clean --download-cache --repo-cache --all-switches
+    opam clean --download-cache --repo-cache --all-switches && \
+    rm -rf /home/semgrep/.opam/5.3.0/.opam-switch/sources
+
+# TODO: How will it know where to get our sources in the future? Will it ever need to download them again?
 
 #Override the default command to launch a login shell
 CMD ["/bin/sh", "-l"]

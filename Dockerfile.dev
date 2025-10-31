@@ -4,4 +4,5 @@ FROM semgrep/ocaml-5.3.0-semgrep
 # dev packages for IDEs
 RUN opam update && \
     opam install lsp dune ocaml-lsp-server utop odoc ocamlformat -y && \
-    opam clean --download-cache --repo-cache --all-switches
+    opam clean --download-cache --repo-cache --all-switches && \
+    rm -rf /home/semgrep/.opam/5.3.0/.opam-switch/sources
