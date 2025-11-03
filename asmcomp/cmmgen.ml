@@ -861,6 +861,9 @@ and transl_prim_1 env p arg dbg =
        dbg)
   | Pdls_get ->
       Cop(Cdls_get, [transl env arg], dbg)
+  (* XXX: leaving this here feels wrong because we are now making
+   * Patomic_load variadic (can take one argument or two, for a field
+   * offset. *)
   | Patomic_load {immediate_or_pointer = Immediate} ->
       Cop(mk_load_atomic Word_int, [transl env arg], dbg)
   | Patomic_load {immediate_or_pointer = Pointer} ->
@@ -886,7 +889,8 @@ and transl_prim_1 env p arg dbg =
     | Plslbint _ | Plsrbint _ | Pasrbint _ | Pbintcomp (_, _)
     | Pbigarrayref (_, _, _, _) | Pbigarrayset (_, _, _, _)
     | Pbigarraydim _ | Pstring_load _ | Pbytes_load _ | Pbytes_set _
-    | Pbigstring_load _ | Pbigstring_set _)
+    | Pbigstring_load _ | Pbigstring_set _
+    )
     ->
       fatal_errorf "Cmmgen.transl_prim_1: %a"
         Printclambda_primitives.primitive p
@@ -902,6 +906,15 @@ and transl_prim_2 env p arg1 arg2 dbg =
       let ptr = transl env arg1 in
       let float_val = transl_unbox_float dbg env arg2 in
       setfloatfield n init ptr float_val dbg
+
+  | Patomic_load {immediate_or_pointer = Immediate} ->
+      let ptr = transl env arg1 in
+      let ofs = transl env arg2 in
+      Cop(mk_load_atomic Word_int, [field_address_computed ptr ofs dbg], dbg)
+  | Patomic_load {immediate_or_pointer = Pointer} ->
+      let ptr = transl env arg1 in
+      let ofs = transl env arg2 in
+      Cop(mk_load_atomic Word_val, [field_address_computed ptr ofs dbg], dbg)
 
   (* Boolean operations *)
   | Psequand ->
@@ -1061,7 +1074,7 @@ and transl_prim_2 env p arg1 arg2 dbg =
      Cop (Cextcall ("caml_atomic_fetch_add", typ_int, [], false),
           [transl env arg1; transl env arg2], dbg)
   | Prunstack | Pperform | Presume | Preperform | Pdls_get
-  | Patomic_cas | Patomic_load _
+  | Patomic_cas
   | Pnot | Pnegint | Pintoffloat | Pfloatofint | Pnegfloat
   | Pabsfloat | Pstringlength | Pbyteslength | Pbytessetu | Pbytessets
   | Pisint | Pbswap16 | Pint_as_pointer | Popaque | Pread_symbol _

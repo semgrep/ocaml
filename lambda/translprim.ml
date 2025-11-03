@@ -366,6 +366,8 @@ let primitives_table =
     "%compare", Comparison(Compare, Compare_generic);
     "%atomic_load",
     Primitive ((Patomic_load {immediate_or_pointer=Pointer}), 1);
+    "%atomic_load_field",
+    Primitive ((Patomic_load {immediate_or_pointer=Pointer}), 2);
     "%atomic_exchange", Primitive (Patomic_exchange, 2);
     "%atomic_cas", Primitive (Patomic_cas, 3);
     "%atomic_fetch_add", Primitive (Patomic_fetch_add, 2);

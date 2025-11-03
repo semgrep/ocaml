@@ -1822,7 +1822,7 @@ module Default = struct
   module Toplevel = struct
 
     let print_version () =
-      Printf.printf "The OCaml toplevel, version %s\n" Sys.ocaml_version;
+      Printf.printf "The OCaml toplevel (semgrep patched), version %s\n" Sys.ocaml_version;
       raise (Compenv.Exit_with_status 0);
     ;;
 

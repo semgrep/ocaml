@@ -356,20 +356,26 @@ CAMLprim value caml_atomic_load (value ref)
 }
 
 /* stores are implemented as exchanges */
-CAMLprim value caml_atomic_exchange (value ref, value v)
+CAMLprim value caml_atomic_exchange_field (value ref, value vfield, value v)
 {
   value ret;
+  intnat field = Long_val(vfield);
   if (caml_domain_alone()) {
-    ret = Field(ref, 0);
-    Field(ref, 0) = v;
+    ret = Field(ref, field);
+    Field(ref, field) = v;
   } else {
     /* See Note [MM] above */
     atomic_thread_fence(memory_order_acquire);
-    ret = atomic_exchange(Op_atomic_val(ref), v);
+    ret = atomic_exchange(&Op_atomic_val(ref)[field], v);
     atomic_thread_fence(memory_order_release); /* generates `dmb ish` on Arm64*/
   }
   write_barrier(ref, 0, ret, v);
   return ret;
+}
+
+CAMLprim value caml_atomic_exchange (value ref, value v)
+{
+  return caml_atomic_exchange_field(ref, Val_long(0), v);
 }
 
 CAMLprim value caml_atomic_cas (value ref, value oldv, value newv)
