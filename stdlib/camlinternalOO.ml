@@ -331,15 +331,15 @@ let make_class pub_meths class_init =
   init_class table;
   (env_init (Obj.repr 0), class_init, Obj.repr 0)
 
-type init_table = { mutable env_init: t; mutable class_init: table -> t }
+type init_table = { env_init: t Atomic.t; class_init: (table -> t) Atomic.t }
 [@@warning "-unused-field"]
 
 let make_class_store pub_meths class_init init_table =
   let table = create_table pub_meths in
   let env_init = class_init table in
   init_class table;
-  init_table.class_init <- class_init;
-  init_table.env_init <- env_init
+  Atomic.set init_table.class_init class_init;
+  Atomic.set init_table.env_init env_init
 
 let dummy_class loc =
   let undef = fun _ -> raise (Undefined_recursive_module loc) in
@@ -401,29 +401,29 @@ external get_public_method : obj -> tag -> closure
 
 type tables =
   | Empty
-  | Cons of {key : closure; mutable data: tables; mutable next: tables}
+  | Cons of {key : closure; data: tables Atomic.t; next: tables Atomic.t}
 
 let set_data tables v = match tables with
   | Empty -> assert false
-  | Cons tables -> tables.data <- v
+  | Cons tables -> Atomic.set tables.data v
 let set_next tables v = match tables with
   | Empty -> assert false
-  | Cons tables -> tables.next <- v
+  | Cons tables -> Atomic.set tables.next v
 let get_key = function
   | Empty -> assert false
   | Cons tables -> tables.key
 let get_data = function
   | Empty -> assert false
-  | Cons tables -> tables.data
+  | Cons tables -> Atomic.get tables.data
 let get_next = function
   | Empty -> assert false
-  | Cons tables -> tables.next
+  | Cons tables -> Atomic.get tables.next
 
 let build_path n keys tables =
-  let res = Cons {key = Obj.magic 0; data = Empty; next = Empty} in
+  let res = Cons {key = Obj.magic 0; data = Atomic.make Empty; next = Atomic.make Empty} in
   let r = ref res in
   for i = 0 to n do
-    r := Cons {key = keys.(i); data = !r; next = Empty}
+    r := Cons {key = keys.(i); data = Atomic.make !r; next = Atomic.make Empty}
   done;
   set_data tables !r;
   res
@@ -441,7 +441,7 @@ let rec lookup_keys i keys tables =
       match get_next tables with
       | Cons _ as next -> lookup_key next
       | Empty ->
-          let next : tables = Cons {key; data = Empty; next = Empty} in
+          let next : tables = Cons {key; data = Atomic.make Empty; next = Atomic.make Empty} in
           set_next tables next;
           build_path (i-1) keys next
   in
