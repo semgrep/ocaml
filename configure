@@ -16653,7 +16653,7 @@ fi
 
 has_c99_float_ops=true
 
-  for ac_func in expm1 log1p hypot fma exp2 log2 cbrt acosh asinh atanh erf erfc trunc round copysign
+  for ac_func in expm1 log1p hypot exp2 log2 cbrt acosh asinh atanh erf erfc trunc copysign
 do :
   as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -16721,13 +16721,13 @@ else $as_nop
 printf "%s\n" "no" >&6; }
     case $enable_imprecise_c99_float_ops,$target in #(
   no,*) :
-    hard_error=true ;; #(
+    hard_error=false ;; #(
   yes,*) :
     hard_error=false ;; #(
   *,x86_64-w64-mingw32*) :
     hard_error=false ;; #(
   *) :
-    hard_error=true ;;
+    hard_error=false ;;
 esac
     if test x"$hard_error" = "xtrue"
 then :
@@ -16816,13 +16816,13 @@ else $as_nop
 printf "%s\n" "no" >&6; }
     case $enable_imprecise_c99_float_ops,$target in #(
   no,*) :
-    hard_error=true ;; #(
+    hard_error=false ;; #(
   yes,*) :
     hard_error=false ;; #(
   *,x86_64-w64-mingw32*|*,x86_64-*-cygwin*) :
     hard_error=false ;; #(
   *) :
-    hard_error=true ;;
+    hard_error=false ;;
 esac
     if test x"$hard_error" = "xtrue"
 then :
