@@ -296,6 +296,6 @@ let join { term_sync ; _ } =
   in
   match Mutex.protect term_sync.mut loop with
   | Ok x -> x
-  | Error ex -> raise ex
+  | Error ex -> Printexc.raise_with_backtrace ex (Printexc.get_raw_backtrace ())
 
 let recommended_domain_count = Raw.get_recommended_domain_count
