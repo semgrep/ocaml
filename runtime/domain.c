@@ -1191,14 +1191,24 @@ CAMLexport _Atomic caml_timing_hook caml_domain_terminated_hook =
 static value make_finished(caml_result result)
 {
   CAMLparam0();
-  CAMLlocal1(res);
-  res = caml_alloc_1(
-    (caml_result_is_exception(result) ?
-     1 /* Error */ :
-     0 /* Ok */),
-    result.data);
-  /* [Finished res] */
-  res = caml_alloc_1(0, res);
+  CAMLlocal2(res, bt);
+  if (caml_result_is_exception(result)) {
+    res = result.data; /* Ensure that [result.data] is rooted before
+                          subsequent allocations */
+    /* res = exn */
+    bt = caml_get_exception_raw_backtrace(Val_unit);
+    res = caml_alloc_2(0, res, bt);
+    /* res = (exn, bt) */
+    res = caml_alloc_1(1 /* Error */, res);
+    /* res = Error (exn, bt) */
+    res = caml_alloc_1(0 /* Finished */, res);
+    /* res = Finished(Error(exn, bt)) */
+  } else {
+    res = caml_alloc_1(0 /* Ok */,result.data);
+    /* res = Ok v */
+    res = caml_alloc_1(0, res);
+    /* res = Finished(Ok v) */
+  }
   CAMLreturn(res);
 }
 
