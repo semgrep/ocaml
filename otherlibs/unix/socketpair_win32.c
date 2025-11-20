@@ -59,7 +59,11 @@ static int socketpair(int domain, int type, int protocol,
     goto fail;
   }
 
-  if (GetTempFileName(dirname, L"osp", 0U, path) == 0) {
+  static volatile LONG tempfile_counter = 0U;
+  UINT unique = ((UINT)GetCurrentProcessId() << 16) |
+                 (InterlockedIncrement(&tempfile_counter) & 0xFFFF);
+
+  if (GetTempFileName(dirname, L"osp", unique, path) == 0) {
     caml_win32_maperr(GetLastError());
     goto fail;
   }
