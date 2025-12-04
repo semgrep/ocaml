@@ -79,6 +79,8 @@ static int socketpair(int domain, int type, int protocol,
     goto fail_path;
   }
 
+  printf("NBT: socketpair: opening file at %s\n", addr.s_unix.sun_path);
+
   listener = caml_win32_socket(domain, type, protocol, NULL, inherit);
   if (listener == INVALID_SOCKET)
     goto fail_wsa;
