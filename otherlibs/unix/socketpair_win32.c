@@ -41,6 +41,8 @@ static int socketpair(int domain, int type, int protocol,
   wchar_t dirname[MAX_PATH + 1], path[MAX_PATH + 1];
   union sock_addr_union addr;
   socklen_param_type socklen;
+  
+  static volatile LONG tempfile_counter = 0U;
 
   /* POSIX states that in case of error, the contents of socket_vector
      shall be unmodified. */
@@ -59,13 +61,15 @@ static int socketpair(int domain, int type, int protocol,
     goto fail;
   }
 
-  static volatile LONG tempfile_counter = 0U;
-  UINT unique = ((UINT)GetCurrentProcessId() << 16) |
-                 (InterlockedIncrement(&tempfile_counter) & 0xFFFF);
-
-  if (GetTempFileName(dirname, L"osp", unique, path) == 0) {
-    caml_win32_maperr(GetLastError());
-    goto fail;
+  size_t max_chars = sizeof(path) / sizeof(path[0]);
+  if (caml_snwprintf(path, 
+                     max_chars,
+                     L"%s/%lx_%x.tmp", 
+                     dirname, 
+                     GetCurrentProcessId(),
+                     InterlockedIncrement(&tempfile_counter)) >= max_chars) {
+    /* XXX: Just ensure we're null-terminated, and hope the prefix is good enough! */
+    path[max_chars - 1] = '\0';
   }
 
   addr.s_unix.sun_family = PF_UNIX;
