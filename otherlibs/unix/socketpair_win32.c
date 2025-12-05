@@ -39,6 +39,7 @@ static int socketpair(int domain, int type, int protocol,
                       BOOL inherit)
 {
   wchar_t dirname[MAX_PATH + 1], path[MAX_PATH + 1];
+  size_t path_bufsz = sizeof(path) / sizeof(path[0]);
   union sock_addr_union addr;
   socklen_param_type socklen;
   
@@ -61,16 +62,14 @@ static int socketpair(int domain, int type, int protocol,
     goto fail;
   }
 
-  size_t max_chars = sizeof(path) / sizeof(path[0]);
-  if (caml_snwprintf(path, 
-                     max_chars,
-                     L"%s/%lx_%x.tmp", 
-                     dirname, 
-                     GetCurrentProcessId(),
-                     InterlockedIncrement(&tempfile_counter)) >= max_chars) {
-    /* XXX: Just ensure we're null-terminated, and hope the prefix is good enough! */
-    path[max_chars - 1] = '\0';
-  }
+  rc = swprintf(path,
+                path_bufsz,
+                L"%s\\osp_%lx_%lx.sock",
+                dirname,
+                GetCurrentProcessId(),
+                InterlockedIncrement(&tempfile_counter));
+  if (rc < 0)
+    goto fail;
 
   addr.s_unix.sun_family = PF_UNIX;
   socklen = sizeof(addr.s_unix);
