@@ -42,7 +42,7 @@ static int socketpair(int domain, int type, int protocol,
   size_t path_bufsz = sizeof(path) / sizeof(path[0]);
   union sock_addr_union addr;
   socklen_param_type socklen;
-  
+
   static volatile LONG tempfile_counter = 0U;
 
   /* POSIX states that in case of error, the contents of socket_vector
@@ -81,8 +81,6 @@ static int socketpair(int domain, int type, int protocol,
     caml_win32_maperr(GetLastError());
     goto fail_path;
   }
-
-  printf("NBT: socketpair: opening file at %s\n", addr.s_unix.sun_path);
 
   listener = caml_win32_socket(domain, type, protocol, NULL, inherit);
   if (listener == INVALID_SOCKET)
