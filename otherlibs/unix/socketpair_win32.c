@@ -38,12 +38,10 @@ static int socketpair(int domain, int type, int protocol,
                       SOCKET socket_vector[2],
                       BOOL inherit)
 {
+  static volatile LONG socketpair_id = 0;
   wchar_t dirname[MAX_PATH + 1], path[MAX_PATH + 1];
-  size_t path_bufsz = sizeof(path) / sizeof(path[0]);
   union sock_addr_union addr;
   socklen_param_type socklen;
-
-  static volatile LONG tempfile_counter = 0U;
 
   /* POSIX states that in case of error, the contents of socket_vector
      shall be unmodified. */
@@ -62,14 +60,15 @@ static int socketpair(int domain, int type, int protocol,
     goto fail;
   }
 
-  rc = swprintf(path,
-                path_bufsz,
-                L"%s\\osp_%lx_%lx.sock",
-                dirname,
-                GetCurrentProcessId(),
-                InterlockedIncrement(&tempfile_counter));
-  if (rc < 0)
+  /* Generate a unique path without creating a file first. This avoids
+     a TOCTOU race between file creation and socket binding. */
+  rc = swprintf(path, MAX_PATH + 1, L"%s\\ocaml_sp_%l08x_%l08x",
+                dirname, GetCurrentProcessId(),
+                (ULONG)InterlockedIncrement(&socketpair_id));
+  if (rc < 0) {
+    errno = ENAMETOOLONG;
     goto fail;
+  }
 
   addr.s_unix.sun_family = PF_UNIX;
   socklen = sizeof(addr.s_unix);
@@ -79,22 +78,14 @@ static int socketpair(int domain, int type, int protocol,
                            UNIX_PATH_MAX, NULL, NULL);
   if (rc == 0) {
     caml_win32_maperr(GetLastError());
-    goto fail_path;
+    goto fail;
   }
 
   listener = caml_win32_socket(domain, type, protocol, NULL, inherit);
   if (listener == INVALID_SOCKET)
     goto fail_wsa;
 
-  /* The documentation requires removing the file before binding the socket. */
-  if (DeleteFile(path) == 0) {
-    drc = GetLastError();
-    if (drc != ERROR_FILE_NOT_FOUND) {
-      caml_win32_maperr(drc);
-      goto fail_sockets;
-    }
-  }
-
+  /* bind() will atomically create the socket file */
   rc = bind(listener, (struct sockaddr *) &addr, socklen);
   if (rc == SOCKET_ERROR)
     goto fail_wsa;
@@ -161,8 +152,6 @@ static int socketpair(int domain, int type, int protocol,
 
 fail_wsa:
   caml_win32_maperr(WSAGetLastError());
-
-fail_path:
   DeleteFile(path);
 
 fail_sockets:
