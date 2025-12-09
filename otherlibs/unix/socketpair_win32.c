@@ -62,7 +62,7 @@ static int socketpair(int domain, int type, int protocol,
 
   /* Generate a unique path without creating a file first. This avoids
      a TOCTOU race between file creation and socket binding. */
-  rc = swprintf(path, MAX_PATH + 1, L"%s\\ocaml_sp_%l08x_%l08x",
+  rc = swprintf(path, MAX_PATH + 1, L"%s\\ocaml_sp_%08lx_%08lx",
                 dirname, GetCurrentProcessId(),
                 (ULONG)InterlockedIncrement(&socketpair_id));
   if (rc < 0) {
