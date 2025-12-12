@@ -3587,6 +3587,12 @@ ac_config_files="$ac_config_files otherlibs/runtime_events/META"
 ac_config_files="$ac_config_files stdlib/META"
 
 
+# Run time sha
+SHA=`git rev-parse --short HEAD 2>/dev/null || echo unknown`
+
+printf "%s\n" "#define SHA \"$SHA\"" >>confdefs.h
+
+
 # Definitions related to the version of OCaml
 printf "%s\n" "#define OCAML_VERSION_MAJOR 5" >>confdefs.h
 
@@ -3594,9 +3600,12 @@ printf "%s\n" "#define OCAML_VERSION_MINOR 3" >>confdefs.h
 
 printf "%s\n" "#define OCAML_VERSION_PATCHLEVEL 0" >>confdefs.h
 
-printf "%s\n" "#define OCAML_VERSION_ADDITIONAL \"semgrep-fork\"" >>confdefs.h
 
-  printf "%s\n" "#define OCAML_VERSION_EXTRA \"semgrep-fork\"" >>confdefs.h
+VERSION_EXTRA="semgrep-fork@${SHA}"
+printf "%s\n" "#define OCAML_VERSION_ADDITIONAL \"$VERSION_EXTRA\"" >>confdefs.h
+
+printf "%s\n" "#define OCAML_VERSION_EXTRA \"$VERSION_EXTRA\"" >>confdefs.h
+
 
 printf "%s\n" "#define OCAML_VERSION 50300" >>confdefs.h
 
