@@ -27,6 +27,9 @@ AC_INIT([OCaml],
 
 # Logic related to adding the git SHA to the compiler version
 SHA=`git rev-parse HEAD 2>/dev/null || echo unknown`
+# This should be of the form
+# 5.3.0+semgrep-fork@<SHA>
+# see build-aux/ocaml_version.m4 to see how OCAML__VERSION is defined
 FORK_VERSION=`echo OCAML__VERSION | m4`@${SHA}
 # end
 
