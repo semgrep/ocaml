@@ -15,6 +15,8 @@
 
 # Process this file with autoconf to produce a configure script.
 
+
+
 # Require Autoconf 2.71 for repeatability in CI
 AC_PREREQ([2.71])
 AC_INIT([OCaml],
@@ -23,7 +25,12 @@ AC_INIT([OCaml],
         [ocaml],
         [http://www.ocaml.org])
 
-AC_MSG_NOTICE([Configuring OCaml version AC_PACKAGE_VERSION])
+# Logic related to adding the git SHA to the compiler version
+SHA=`git rev-parse HEAD 2>/dev/null || echo unknown`
+FORK_VERSION=`echo OCAML__VERSION | m4`@${SHA}
+# end
+
+AC_MSG_NOTICE([Configuring OCaml version $FORK_VERSION])
 
 # Configuration variables
 
@@ -92,12 +99,14 @@ AC_CONFIG_SRCDIR([runtime/interp.c])
 ## Directory containing auxiliary scripts used during build
 AC_CONFIG_AUX_DIR([build-aux])
 
+
+
 ## Output variables
 
 AC_SUBST([CONFIGURE_ARGS])
 AC_SUBST([native_compiler])
 AC_SUBST([default_build_target])
-AC_SUBST([VERSION], [AC_PACKAGE_VERSION])
+AC_SUBST([VERSION], ["$FORK_VERSION"])
 AC_SUBST([OCAML_DEVELOPMENT_VERSION], [OCAML__DEVELOPMENT_VERSION])
 AC_SUBST([OCAML_RELEASE_EXTRA], [OCAML__RELEASE_EXTRA])
 AC_SUBST([OCAML_VERSION_MAJOR], [OCAML__VERSION_MAJOR])
@@ -275,10 +284,8 @@ AC_CONFIG_FILES([compilerlibs/META])
 AC_CONFIG_FILES([otherlibs/dynlink/META])
 AC_CONFIG_FILES([otherlibs/runtime_events/META])
 AC_CONFIG_FILES([stdlib/META])
+AC_CONFIG_FILES([VERSION])
 
-# Run time sha
-SHA=`git rev-parse --short HEAD 2>/dev/null || echo unknown`
-AC_DEFINE_UNQUOTED([SHA], ["$SHA"], [Git commit hash])
 
 # Definitions related to the version of OCaml
 AC_DEFINE([OCAML_VERSION_MAJOR], [OCAML__VERSION_MAJOR])

@@ -54,13 +54,18 @@ m4_define([OCAML__VERSION],
     m4_if(OCAML__VERSION_EXTRA,[],[],
       OCAML__VERSION_EXTRA_PREFIX[]OCAML__VERSION_EXTRA))])
 
-# Generate the VERSION file
-# The following command is invoked when autoconf is run to generate configure
-# from configure.ac, not while configure itself is run.
-# In other words, both VERSION and configure are produced by invoking
-# autoconf (usually done by calling tools/autogen for this project)
-m4_syscmd([cat > VERSION << END_OF_VERSION_FILE
-]OCAML__VERSION[
+
+# Since we want to have the SHA at the end of the compiler version, we need
+# to generate the VERSION file during ./configure time; I've commented the OG
+# logic below:
+#
+# > Generate the VERSION file
+# > The following command is invoked when autoconf is run to generate configure
+# > from configure.ac, not while configure itself is run.
+# > In other words, both VERSION and configure are produced by invoking
+# > autoconf (usually done by calling tools/autogen for this project)
+# > m4_syscmd([cat > VERSION << END_OF_VERSION_FILE
+# > ]OCAML__VERSION[
 
 # Starting with OCaml 4.14, although the version string that appears above is
 # still correct and this file can thus still be used to figure it out,
