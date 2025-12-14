@@ -758,9 +758,10 @@ static void domain_create(uintnat initial_minor_heap_wsize,
 
   domain_state->parser_trace = 0;
 
-  if (caml_params->backtrace_enabled) {
-    caml_record_backtraces(1);
-  }
+  bool bt_enabled = parent
+    ? parent->backtrace_active
+    : caml_params->backtrace_enabled;
+  caml_record_backtraces(bt_enabled);
 
 #ifndef NATIVE_CODE
   domain_state->external_raise = NULL;
