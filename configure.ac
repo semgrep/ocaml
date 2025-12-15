@@ -28,8 +28,8 @@ SHA=`git rev-parse HEAD 2>/dev/null || echo unknown`
 # This should be of the form
 # 5.3.0+semgrep-fork@<SHA>
 # see build-aux/ocaml_version.m4 to see how OCAML__VERSION is defined
-FORK__VERSION_EXTRA=OCAML__VERSION_EXTRA${SHA}  # semgrep-fork<SHA>
-FORK_VERSION=OCAML__VERSION${SHA} # 5.x.x+semgrep-fork<SHA>
+FORK__VERSION_EXTRA=OCAML__VERSION_EXTRA@${SHA}  # semgrep-fork@<SHA>
+FORK_VERSION=OCAML__VERSION${SHA} # 5.x.x+semgrep-fork@<SHA>
 FORK_RELEASE_EXTRA="Some (Plus, \"${FORK__VERSION_EXTRA}\")" # Sys.ocaml_release.extra
 # end
 
