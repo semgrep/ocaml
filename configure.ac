@@ -15,8 +15,6 @@
 
 # Process this file with autoconf to produce a configure script.
 
-
-
 # Require Autoconf 2.71 for repeatability in CI
 AC_PREREQ([2.71])
 AC_INIT([OCaml],
@@ -101,8 +99,6 @@ AC_CONFIG_SRCDIR([runtime/interp.c])
 
 ## Directory containing auxiliary scripts used during build
 AC_CONFIG_AUX_DIR([build-aux])
-
-
 
 ## Output variables
 
