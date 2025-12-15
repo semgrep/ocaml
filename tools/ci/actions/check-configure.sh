@@ -52,7 +52,7 @@ fi
 
 CI_SCRIPT='tools/ci/actions/check-configure.sh'
 PATHS=\
-'configure\|configure\.ac\|aclocal\.m4\|build-aux/.*'\
+'configure\|configure\.ac\|VERSION\|aclocal\.m4\|build-aux/.*'\
 '\|tools/autogen\|tools/git-dev-options\.sh'
 
 # $1 - commit to checkout files from
