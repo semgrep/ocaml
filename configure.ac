@@ -30,7 +30,7 @@ SHA=`git rev-parse HEAD 2>/dev/null || echo unknown`
 # see build-aux/ocaml_version.m4 to see how OCAML__VERSION is defined
 FORK__VERSION_EXTRA=`echo OCAML__VERSION_EXTRA | m4`${SHA} # semgrep-fork<SHA>
 FORK_VERSION=`echo OCAML__VERSION | m4`${SHA} # 5.x.x+semgrep-fork<SHA>
-FORK_RELEASE_EXTRA="Some (Plus, \"${FORK__VERSION_EXTRA}\"))" # Sys.ocaml_release.extra
+FORK_RELEASE_EXTRA="Some (Plus, \"${FORK__VERSION_EXTRA}\")" # Sys.ocaml_release.extra
 # end
 
 AC_MSG_NOTICE([Configuring OCaml version $FORK_VERSION])
