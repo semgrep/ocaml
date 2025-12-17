@@ -67,11 +67,6 @@ m4_define([OCAML__VERSION_NUMBER],
     OCAML__VERSION_MINOR,
     OCAML__VERSION_PATCHLEVEL)])
 
-m4_define([OCAML__RELEASE_EXTRA], 
-  m4_if(OCAML__VERSION_EXTRA,[],[None],
-      ['Some (]m4_if(OCAML__VERSION_EXTRA_PREFIX,+,[Plus],
-      [Tilde])[, "]OCAML__VERSION_EXTRA[")']))]))
-
 # Magic numbers for the different file formats
 
 # The magic numbers are made of three components:
