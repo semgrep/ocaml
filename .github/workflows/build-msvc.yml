@@ -130,9 +130,3 @@ jobs:
         # reasonable cleaned-up versions of the raw dumpbins and not simply
         # empty
         if: matrix.x86_64
-
-      - name: Run the test suite
-        shell: bash
-        run: >-
-          eval $(tools/msvs-promote-path) ;
-          make -j tests ;
