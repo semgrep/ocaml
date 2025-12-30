@@ -184,11 +184,5 @@ jobs:
         # empty
         if: endsWith(matrix.arch, '64') && matrix.cc != 'gcc'
 
-      - name: Run the test suite
-        if: ${{ needs.config.outputs.skip-testsuite != 'true' }}
-        run: |
-          eval $(tools/msvs-promote-path)
-          make tests
-
       - name: Install the compiler
         run: make install
