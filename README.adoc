@@ -4,7 +4,7 @@ OCaml 5.3 is currently used to build Semgrep.  The changes we've applied to the 
 
 [cols="1,1"]
 |===
-|Description and Commit |Upstream status  
+|Description and Commit |Upstream status
 
 |Bugfix for GC root mishandling in memprof.c (d50385f)
 |TBR in 5.5
@@ -12,3 +12,42 @@ OCaml 5.3 is currently used to build Semgrep.  The changes we've applied to the 
 |fix: hard code domain stack sizes to 8 MiB(3d8d8c)
 |TBA
 |===
+
+We are preparing to move to OCaml 5.4.  The changes applied atop the upstream 5.4.0 release tag, found on the `5.4.0-semgrep` branch, are, latest to oldest:
+
+[cols="1,1"]
+|===
+|Description and Commit |Upstream status
+
+|fix: update macos-lldb-amd64 reference for macos-15 lldb (614ff63)
+|Mirrors upstream ocaml/ocaml@9c56208026; not in 5.4.0
+
+|fix: keep configure.ac under 80 columns for check-typo (b5b017b)
+|Semgrep-specific
+
+|feat: modify ocaml version to `5.4.0+semgrep-fork@<sha>` (acdcdeb)
+|Semgrep-specific (fork version string)
+
+|feat: Domains inherit `backtrace_enabled` (df58ee8, 151ab2d)
+|Upstreamed in ocaml#14416; on trunk, not in 5.4.0
+
+|fix(CI): disable ocamltest for MSVC builds (e0603cf)
+|Semgrep-specific
+
+|ci: remove 'changes updated' workflow (2009fc7)
+|Semgrep-specific
+
+|chore: bump intel macos runner to `macos-15-intel` (0d6974e)
+|Semgrep-specific
+
+|fix(windows): Fix racy socketpair on Windows (1a798b9)
+|Upstreamed in ocaml#14461; on trunk, not in 5.4.0
+
+|Domain.join re-raises uncaught exceptions with backtrace (33513db)
+|Upstreamed in ocaml#14363; on trunk, not in 5.4.0
+
+|fix: hard code domain stack sizes to 8 MiB (69ce566)
+|Semgrep-specific; workaround for ocaml#14195
+|===
+
+The memprof GC-root fix carried on `5.3.0-semgrep` (ocaml#14287) is part of the 5.4.0 release, so it is not carried on `5.4.0-semgrep`.
