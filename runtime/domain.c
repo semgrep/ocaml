@@ -1357,14 +1357,11 @@ CAMLprim value caml_domain_spawn(value callback, value term_sync)
 
   /* Semgrep: ensure we have an appropriately-large stack.  Workaround
    * until https://github.com/ocaml/ocaml/issues/14195 is available.
-   * ~8 MiB is the default stack size for both OSX[1] and Linux[2], so
-   * this should give us parity with parmap children's stacks.
-   * [1] ulimit -s -> 8076 (on MacOS Sequoia)
-   * [2] ulimit -s -> 8192 (on Linux 6.17)
-   * */
+   * TSAN needs more stack than the ~8 MiB OSX/Linux default (shadow
+   * state and deeper instrumented frames), so use 64 MiB here. */
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-  pthread_attr_setstacksize(&attr, 8 * 1024 * 1024);
+  pthread_attr_setstacksize(&attr, 64 * 1024 * 1024);
 
   err = pthread_create(&th, &attr, domain_thread_func, (void*)&p);
   caml_check_error(err, "failed to create domain thread: pthread_create");
