@@ -19,6 +19,9 @@ We are preparing to move to OCaml 5.4.  The changes applied atop the upstream 5.
 |===
 |Description and Commit |Upstream status
 
+|fix: sigaltstack size for musl on certain Intel CPUs (8f9aa79)
+|Upstreamed in ocaml#14933
+
 |fix: print errno on sigaltstack errors (5e80489)
 |Upstreamed in ocaml#14928
 
