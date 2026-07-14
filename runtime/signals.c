@@ -21,6 +21,9 @@
 #include <errno.h>
 #include <stdbool.h>
 #include "caml/config.h"
+#ifdef HAS_UNISTD
+#include <unistd.h>
+#endif
 #ifdef USE_MMAP_MAP_STACK
 #include <sys/mman.h>
 #endif
@@ -522,12 +525,29 @@ CAMLexport int caml_rev_convert_signal_number(int signo)
   return signo;
 }
 
+#ifdef POSIX_SIGNALS
+/* musl (>= 1.2.6) rejects sigaltstack() when ss_size <
+ * sysconf(_SC_MINSIGSTKSZ). On some architectures, this can be larger than
+ * SIGSTKSZ which in musl is a build-time constant. */
+static size_t caml_signal_stack_size(void)
+{
+  size_t size = SIGSTKSZ;
+#ifdef _SC_MINSIGSTKSZ
+  /* glibc/musl only */
+  long min = sysconf(_SC_MINSIGSTKSZ);
+  if (min > 0 && (size_t) min > size)
+    size = (size_t) min;
+#endif
+  return size;
+}
+#endif /* POSIX_SIGNALS */
+
 void * caml_init_signal_stack(void)
 {
 #ifdef POSIX_SIGNALS
   stack_t stk;
   stk.ss_flags = 0;
-  stk.ss_size = SIGSTKSZ;
+  stk.ss_size = caml_signal_stack_size();
   /* The memory used for the alternate signal stack must not free'd before
      calling sigaltstack with SS_DISABLE. malloc/mmap is therefore used rather
      than caml_stat_alloc_noexc so that if a shutdown path erroneously fails
@@ -540,7 +560,7 @@ void * caml_init_signal_stack(void)
   if (stk.ss_sp == MAP_FAILED)
     return NULL;
   if (sigaltstack(&stk, NULL) < 0) {
-    munmap(stk.ss_sp, SIGSTKSZ);
+    munmap(stk.ss_sp, stk.ss_size);
     return NULL;
   }
 #else
@@ -576,7 +596,7 @@ void caml_free_signal_stack(void * signal_stack)
   /* Memory was allocated with malloc/mmap directly (see
      caml_init_signal_stack) */
 #ifdef USE_MMAP_MAP_STACK
-  munmap(signal_stack, SIGSTKSZ);
+  munmap(signal_stack, caml_signal_stack_size());
 #else
   free(signal_stack);
 #endif /* USE_MMAP_MAP_STACK */
