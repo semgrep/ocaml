@@ -103,6 +103,32 @@ val self_index : unit -> int
     @since 5.3
 *)
 
+val set_interrupt_handler : (int -> unit) -> unit
+(** [set_interrupt_handler f] installs [f] as the current domain's asynchronous
+    interrupt handler. When another thread or domain calls [interrupt] targeting
+    this domain, [f] runs at this domain's next safe point (a poll point or an
+    allocation), applied to the bitwise-or of all [reasons] masks passed since
+    the last delivery. The bit meanings are entirely caller-defined. If [f]
+    raises, the exception propagates from wherever the domain was executing.
+
+    The handler is owned by this domain; nothing is shared cross-domain.
+
+    @since 5.3 *)
+
+val interrupt : index:int -> reasons:int -> unit
+(** [interrupt ~index ~reasons] ORs [reasons] into the pending interrupt set of
+    the domain whose {!self_index} is [index], and forces it to its next safe
+    point, where its handler (see {!set_interrupt_handler}) runs. Safe to call
+    from any thread or domain.
+
+    It does {e not} interrupt blocking C calls, system calls, or non-allocating
+    loops running inside C code — only OCaml execution at safe points.
+
+    [index] is a slot that is reused after a domain terminates, so the caller is
+    responsible for only interrupting live domains.
+
+    @since 5.3 *)
+
 module DLS : sig
 (** Domain-local Storage *)
 
