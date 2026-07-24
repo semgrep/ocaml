@@ -236,6 +236,15 @@ static uintnat stw_requests_suspended = 0; /* protected by all_domains_lock */
 static caml_plat_cond requests_suspended_cond = CAML_PLAT_COND_INITIALIZER;
 static dom_internal* all_domains;
 
+/* Asynchronous per-domain interrupt (Domain.interrupt). Signalling is kept
+   separate from payload (cf. ocaml/ocaml#10915): [pending] is a reason bitmask
+   set from any thread, delivered on the target domain at its next safe point.
+   [handler] is a per-domain closure owned by that domain (its own rooted slot,
+   so nothing is shared cross-domain). All three arrays are [max_domains]-sized. */
+static atomic_uintnat* caml_domain_interrupt_pending;
+static value* caml_domain_interrupt_handler;
+static char* caml_domain_interrupt_handler_rooted;
+
 CAMLexport atomic_uintnat caml_num_domains_running;
 
 /* size of the virtual memory reservation for the minor heap, per domain */
@@ -954,6 +963,17 @@ void caml_init_domains(uintnat max_domains, uintnat minor_heap_wsz)
   if (stw_domains.domains == NULL)
     caml_fatal_error("Failed to allocate stw_domains.domains");
 
+  caml_domain_interrupt_pending =
+      caml_stat_calloc_noexc(max_domains, sizeof(atomic_uintnat));
+  caml_domain_interrupt_handler =
+      caml_stat_calloc_noexc(max_domains, sizeof(value));
+  caml_domain_interrupt_handler_rooted =
+      caml_stat_calloc_noexc(max_domains, sizeof(char));
+  if (caml_domain_interrupt_pending == NULL
+      || caml_domain_interrupt_handler == NULL
+      || caml_domain_interrupt_handler_rooted == NULL)
+    caml_fatal_error("Failed to allocate domain interrupt state");
+
   reserve_minor_heaps_from_stw_single();
   /* stw_single: mutators and domains have not started yet. */
 
@@ -963,6 +983,8 @@ void caml_init_domains(uintnat max_domains, uintnat minor_heap_wsz)
     stw_domains.domains[i] = dom;
 
     dom->id = i;
+
+    caml_domain_interrupt_handler[i] = Val_unit;
 
     dom->interruptor.interrupt_word = NULL;
     caml_plat_mutex_init(&dom->interruptor.lock);
@@ -1361,6 +1383,53 @@ CAMLprim value caml_ml_domain_index(value unit)
 {
   CAMLnoalloc;
   return Val_long(domain_self->id);
+}
+
+/* --------- Asynchronous per-domain interrupt (Domain.interrupt) --------- */
+
+/* Delivered on the target domain at a safe point, from
+   caml_do_pending_actions_res. The handler may raise; we return it as a
+   caml_result so the raise happens at the sanctioned point (via
+   caml_get_value_or_raise), never as a longjmp out of C. */
+caml_result caml_run_domain_interrupt_res(void)
+{
+  intnat id = Caml_state->id;
+  uintnat reasons = atomic_exchange(&caml_domain_interrupt_pending[id], 0);
+  if (reasons == 0) return Result_unit;
+  value h = caml_domain_interrupt_handler[id];   /* only this domain reads it */
+  if (h == Val_unit) return Result_unit;         /* no handler installed */
+  return caml_callback_res(h, Val_long(reasons));
+}
+
+/* Set the current domain's interrupt handler. Each domain owns its own rooted
+   slot pointing at its own closure, so there is no cross-domain sharing. */
+CAMLprim value caml_domain_set_interrupt_handler(value handler)
+{
+  intnat id = Caml_state->id;
+  if (!caml_domain_interrupt_handler_rooted[id]) {
+    caml_domain_interrupt_handler[id] = Val_unit;
+    caml_register_generational_global_root(&caml_domain_interrupt_handler[id]);
+    caml_domain_interrupt_handler_rooted[id] = 1;
+  }
+  caml_modify_generational_global_root(&caml_domain_interrupt_handler[id],
+                                       handler);
+  return Val_unit;
+}
+
+/* OR [v_reasons] into a domain's pending set and force it to its next safe
+   point. Callable from any thread/domain (atomics only). */
+CAMLprim value caml_domain_do_interrupt(value v_index, value v_reasons)
+{
+  intnat id = Long_val(v_index);
+  if (id < 0 || id >= caml_params->max_domains) return Val_unit;
+  atomic_fetch_or(&caml_domain_interrupt_pending[id],
+                  (uintnat)Long_val(v_reasons));
+  /* interrupt_word is NULL for a slot with no running domain; the release
+     store publishes the pending write (cf. caml_interrupt_all_signal_safe). */
+  dom_internal* d = &all_domains[id];
+  if (atomic_load_acquire(&d->interruptor.interrupt_word) != NULL)
+    interrupt_domain(&d->interruptor);
+  return Val_unit;
 }
 
 /* Global barrier implementation */
@@ -1804,7 +1873,8 @@ void caml_reset_young_limit(caml_domain_state * dom_st)
   if (interruptor_has_pending(&d->interruptor)
       || dom_st->requested_minor_gc
       || dom_st->requested_major_slice
-      || dom_st->major_slice_epoch < atomic_load (&caml_major_slice_epoch)) {
+      || dom_st->major_slice_epoch < atomic_load (&caml_major_slice_epoch)
+      || atomic_load_relaxed(&caml_domain_interrupt_pending[dom_st->id])) {
     interrupt_domain_local(dom_st);
   }
   /* We might be here due to a recently-recorded signal or forced
