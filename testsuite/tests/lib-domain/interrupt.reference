@@ -1,0 +1,5 @@
+domain 0 caught=true
+domain 1 caught=true
+domain 2 caught=true
+domain 3 caught=true
+OK: all non-allocating domains were interrupted
