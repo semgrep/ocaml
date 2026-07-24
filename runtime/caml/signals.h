@@ -103,6 +103,7 @@ CAMLextern void caml_record_signal(int signal_number);
 CAMLextern caml_result caml_process_pending_signals_res(void);
 CAMLextern void caml_set_action_pending(caml_domain_state *);
 caml_result caml_do_pending_actions_res(void);
+caml_result caml_run_domain_interrupt_res(void);
 
 void caml_init_signal_handling(void);
 void caml_init_signals(void);

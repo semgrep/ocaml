@@ -360,6 +360,12 @@ caml_result caml_do_pending_actions_res(void)
   result = caml_final_do_calls_res();
   if (caml_result_is_exception(result)) goto exception;
 
+  /* Deliver a pending Domain.interrupt for this domain, if any. Runs an OCaml
+     handler that may raise; propagated as a caml_result so the raise lands at
+     caml_get_value_or_raise, not from inside C. */
+  result = caml_run_domain_interrupt_res();
+  if (caml_result_is_exception(result)) goto exception;
+
   /* Process external interrupts (e.g. preemptive systhread switching).
      By doing this last, we do not need to set the action pending flag
      in case a context switch happens: all actions have been processed
