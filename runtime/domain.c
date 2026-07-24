@@ -667,6 +667,10 @@ static void domain_create(uintnat initial_minor_heap_wsize,
 
   domain_state->id = d->id;
 
+  /* An interrupt posted to this slot after the previous occupant terminated
+     but before we claimed it belongs to that occupant, not to us. */
+  atomic_store_relaxed(&caml_domain_interrupt_pending[d->id], 0);
+
   /* Tell memprof system about the new domain before either (a) new
    * domain can allocate anything or (b) parent domain can go away. */
   CAMLassert(domain_state->memprof == NULL);
@@ -1926,10 +1930,14 @@ void caml_reset_young_limit(caml_domain_state * dom_st)
   if (interruptor_has_pending(&d->interruptor)
       || dom_st->requested_minor_gc
       || dom_st->requested_major_slice
-      || dom_st->major_slice_epoch < atomic_load (&caml_major_slice_epoch)
-      || atomic_load_relaxed(&caml_domain_interrupt_pending[dom_st->id])) {
+      || dom_st->major_slice_epoch < atomic_load (&caml_major_slice_epoch)) {
     interrupt_domain_local(dom_st);
   }
+  /* A pending Domain.interrupt is deliberately not listed above. It is a
+     delayable action (it runs an OCaml handler), so it rides on
+     [action_pending], set unconditionally below. Re-arming young_limit for it
+     would livelock caml_enter_blocking_section, whose loop only drains signals
+     and so can never clear the interrupt that keeps young_limit armed. */
   /* We might be here due to a recently-recorded signal or forced
      systhread switching, so we need to remember that we must run
      signal handlers or systhread's yield. In addition, in the case of
@@ -2155,6 +2163,13 @@ void caml_domain_terminate(bool last)
      this. */
   caml_domain_stop_hook();
   call_timing_hook(&caml_domain_terminated_hook);
+
+  /* No OCaml runs on this domain again, and the slot is about to become
+     reusable, so drop its handler root and any undelivered reasons. */
+  atomic_store_relaxed(&caml_domain_interrupt_pending[domain_self->id], 0);
+  if (caml_domain_interrupt_handler_rooted[domain_self->id])
+    caml_modify_generational_global_root(
+      &caml_domain_interrupt_handler[domain_self->id], Val_unit);
 
   while (!finished) {
     caml_finish_sweeping();
