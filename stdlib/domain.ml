@@ -207,6 +207,14 @@ let is_main_domain () = (self () :> int) = 0
 external self_index : unit -> int
   = "caml_ml_domain_index" [@@noalloc]
 
+external do_interrupt : int -> int -> unit
+  = "caml_domain_do_interrupt" [@@noalloc]
+
+external set_interrupt_handler : (int -> unit) -> unit
+  = "caml_domain_set_interrupt_handler"
+
+let interrupt ~index ~reasons = do_interrupt index reasons
+
 (******** Callbacks **********)
 
 (* first spawn, domain startup and at exit functionality *)
